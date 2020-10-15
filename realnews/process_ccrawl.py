@@ -111,7 +111,8 @@ class Article(object):
     def __init__(self, html):
         self.html = html if html is not None else ""
 
-        self.dummy_article = newspaper.Article(url='', fetch_images=False, verbose=True)
+        self.dummy_article = newspaper.Article(
+            url='', fetch_images=False, verbose=True)
         self.dummy_article.set_html(html)
         self.dummy_article.parse()
 
@@ -242,7 +243,7 @@ out_prefix = 'propaganda-' if args.propaganda else ''
 
 out_key = '{}{}/{}.jsonl'.format(out_prefix, args.path.split('/')[1], rest)
 
-temp_dir = os.path.join(os.path.expanduser("~"), "temp")
+temp_dir = os.path.basename(args.path)
 with TemporaryFile(mode='w+b', dir=temp_dir) as warctemp:
     s3client.download_fileobj('commoncrawl', args.path, warctemp)
     warctemp.seek(0)
