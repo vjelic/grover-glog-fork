@@ -256,6 +256,6 @@ with TemporaryFile(mode='w+b', dir=temp_dir) as warctemp:
             for parsed_record in parse_record(record, propaganda=args.propaganda):
                 f.write(json.dumps(parsed_record) + '\n')
 
-        s3client.upload_file(f.name, args.bucket_name, out_key)
+        # s3client.upload_file(f.name, args.bucket_name, out_key)
 
     print("I guess I'm done now")
