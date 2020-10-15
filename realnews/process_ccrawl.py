@@ -11,6 +11,9 @@ import tldextract
 from tqdm import tqdm
 from warcio import ArchiveIterator
 
+from botocore import UNSIGNED
+from botocore.config import Config
+
 with open(os.path.join(os.path.dirname(__file__), 'domain_to_allowed_subdomains.json'), 'r') as f:
     ALLOWED_SUBDOMAINS = json.load(f)
 
@@ -221,7 +224,7 @@ def parse_record(record, propaganda=False):
 
 # NOTE: You might have to put in your credentials here, like
 # s3client = boto3.client('s3', aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
-s3client = boto3.client('s3')
+s3client = boto3.client('s3', config=Config(signature_version=UNSIGNED))
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-path', type=str,
@@ -239,11 +242,12 @@ out_prefix = 'propaganda-' if args.propaganda else ''
 
 out_key = '{}{}/{}.jsonl'.format(out_prefix, args.path.split('/')[1], rest)
 
-with TemporaryFile(mode='w+b', dir='/home/ubuntu/temp/') as warctemp:
+temp_dir = os.path.join(os.path.expanduser("~"), "temp")
+with TemporaryFile(mode='w+b', dir=temp_dir) as warctemp:
     s3client.download_fileobj('commoncrawl', args.path, warctemp)
     warctemp.seek(0)
 
-    with NamedTemporaryFile(mode='w', dir='/home/ubuntu/temp/') as f:
+    with NamedTemporaryFile(mode='w', dir=temp_dir) as f:
         for record in tqdm(ArchiveIterator(warctemp, no_record_parse=False)):
             for parsed_record in parse_record(record, propaganda=args.propaganda):
                 f.write(json.dumps(parsed_record) + '\n')
