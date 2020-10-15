@@ -243,7 +243,7 @@ out_prefix = 'propaganda-' if args.propaganda else ''
 
 out_key = '{}{}/{}.jsonl'.format(out_prefix, args.path.split('/')[1], rest)
 
-temp_dir = os.path.basename(args.path)
+temp_dir = os.path.dirname(args.path)
 with TemporaryFile(mode='w+b', dir=temp_dir) as warctemp:
     s3client.download_fileobj('commoncrawl', args.path, warctemp)
     warctemp.seek(0)
