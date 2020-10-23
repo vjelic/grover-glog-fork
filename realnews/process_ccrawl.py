@@ -13,6 +13,9 @@ from warcio import ArchiveIterator
 
 from botocore import UNSIGNED
 from botocore.config import Config
+import shutil
+
+print("Process_ccrawl.py")
 
 with open(os.path.join(os.path.dirname(__file__), 'domain_to_allowed_subdomains.json'), 'r') as f:
     ALLOWED_SUBDOMAINS = json.load(f)
@@ -111,8 +114,7 @@ class Article(object):
     def __init__(self, html):
         self.html = html if html is not None else ""
 
-        self.dummy_article = newspaper.Article(
-            url='', fetch_images=False, verbose=True)
+        self.dummy_article = newspaper.Article(url='', fetch_images=False, verbose=True)
         self.dummy_article.set_html(html)
         self.dummy_article.parse()
 
@@ -232,7 +234,7 @@ parser.add_argument('-path', type=str,
                     default='crawl-data/CC-MAIN-2017-13/segments/1490218186353.38/warc/CC-MAIN-20170322212946-00000-ip-10-233-31-227.ec2.internal.warc.gz',
                     help='in path')
 parser.add_argument('-temp_dir', type=str,
-                    default='/data/realnews/temp',
+                    default='/data/realnews/temp/',
                     help='temp dir')
 parser.add_argument('-bucket_name', type=str,
                     help='out path')
@@ -246,7 +248,7 @@ out_prefix = 'propaganda-' if args.propaganda else ''
 
 out_key = '{}{}/{}.jsonl'.format(out_prefix, args.path.split('/')[1], rest)
 
-temp_dir = os.path.dirname(args.temp_dir)
+temp_dir = args.temp_dir
 with TemporaryFile(mode='w+b', dir=temp_dir) as warctemp:
     s3client.download_fileobj('commoncrawl', args.path, warctemp)
     warctemp.seek(0)
@@ -254,8 +256,10 @@ with TemporaryFile(mode='w+b', dir=temp_dir) as warctemp:
     with NamedTemporaryFile(mode='w', dir=temp_dir) as f:
         for record in tqdm(ArchiveIterator(warctemp, no_record_parse=False)):
             for parsed_record in parse_record(record, propaganda=args.propaganda):
+                print(parsed_record['url'])
                 f.write(json.dumps(parsed_record) + '\n')
 
+        shutil.copy(f.name, f.name + ".json")
         # s3client.upload_file(f.name, args.bucket_name, out_key)
 
     print("I guess I'm done now")
